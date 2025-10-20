@@ -1,66 +1,42 @@
 import streamlit as st
+from tensorflow.keras.models import load_model
 import numpy as np
 from PIL import Image
-import os
-import gdown              # pip install gdown
-from tensorflow.keras.models import load_model
 
-# ---------- CONFIG ----------
-GDRIVE_FILE_ID = "1DL_ShoFOTLtgyyv5-dWgcV8iyM_En3P-"   # <== Ganti dengan ID file Drive Anda
-MODEL_NAME     = "fashion_mnist_cnn.h5"
-
-# ---------- FUNGSI UNDUH MODEL ----------
-@st.cache_resource(show_spinner=False)
-def get_model():
-    """Download model (first time only) lalu load ke memory."""
-    if not os.path.exists(MODEL_NAME):
-        url = f"https://drive.google.com/uc?id={GDRIVE_FILE_ID}"
-        with st.spinner("Downloading model (first run)..."):
-            gdown.download(url, MODEL_NAME, quiet=False)
-    try:
-        return load_model(MODEL_NAME)
-    except Exception as e:
-        st.error(f"Gagal load model: {e}")
-        st.stop()
-
-# ---------- PRE-PROCESSING ----------
-def preprocess_image(image: Image.Image) -> np.ndarray:
-    img = image.convert("L")                 # grayscale
-    img = img.resize((28, 28))               # resize
-    img_array = np.array(img) / 255.0        # normalisasi
+# ---------- PRE-PROCESS ----------
+def preprocess_image(image):
+    img = image.convert('L')          # grayscale
+    img = img.resize((28, 28))
+    img_array = np.array(img) / 255.0
     return img_array.reshape(1, 28, 28, 1)
 
 # ---------- LABEL ----------
-class_names = [
-    "T-shirt/top", "Trouser", "Pullover", "Dress", "Coat",
-    "Sandal", "Shirt", "Sneaker", "Bag", "Ankle boot"
-]
+class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
+               'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
 
 # ---------- UI ----------
-st.set_page_config(page_title="Fashion-MNIST CNN", layout="centered")
-st.title("🧥 Klasifikasi Gambar Pakaian (Fashion MNIST)")
+st.title("Klasifikasi Gambar Pakaian (Fashion MNIST)")
 st.write("Unggah gambar pakaian untuk diprediksi oleh model CNN.")
 
-# ---------- LOAD MODEL ----------
-model = get_model()
+model = load_model('model_fashion_mnist.h5')
 
-# ---------- UPLOAD ----------
-uploaded = st.file_uploader("Pilih gambar...", type=["jpg", "jpeg", "png"])
-if uploaded is not None:
-    image = Image.open(uploaded)
-    st.image(image, caption="Gambar yang diunggah", use_container_width=True)
-    st.write("🔍 Memprediksi...")
+uploaded_file = st.file_uploader("Pilih gambar...", type=["jpg", "png", "jpeg"])
 
-    # ---------- PREDIKSI ----------
-    X = preprocess_image(image)
-    prob = model.predict(X)[0]                     # shape (10,)
+if uploaded_file is not None:
+    image = Image.open(uploaded_file)
+    st.image(image, caption='Gambar yang diunggah.', use_column_width=True)
 
-    # top-3
-    idx = np.argsort(prob)[::-1][:3]
-    labels = [class_names[i] for i in idx]
-    confs  = prob[idx]
+    # ---------- PREDIKSI + TOP-3 ----------
+    with st.spinner("Memprediksi..."):
+        processed_image = preprocess_image(image)
+        prob = model.predict(processed_image)[0]        # shape (10,)
 
-    # ---------- TAMPILKAN ----------
+    # ambil 3 besar
+    top3_idx = np.argsort(prob)[::-1][:3]
+    top3_label = [class_names[i] for i in top3_idx]
+    top3_prob  = prob[top3_idx]
+
+    # ---------- TAMPILKAN HANYA TOP-3 ----------
     st.success("Top-3 Prediksi:")
-    for rank, (lab, c) in enumerate(zip(labels, confs), 1):
-        st.write(f"{rank}. **{lab}** – Keyakinan: **{c*100:.2f}%**")
+    for rank, (label, confidence) in enumerate(zip(top3_label, top3_prob), 1):
+        st.write(f"{rank}. **{label}** – Keyakinan: **{confidence*100:.2f}%**")
