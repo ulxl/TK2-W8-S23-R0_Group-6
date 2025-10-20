@@ -18,7 +18,7 @@ class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
 st.title("Klasifikasi Gambar Pakaian (Fashion MNIST)")
 st.write("Unggah gambar pakaian untuk diprediksi oleh model CNN.")
 
-model = load_model('model_fashion_mnist.h5')
+model = load_model('fashion_mnist_cnn.h5')
 
 uploaded_file = st.file_uploader("Pilih gambar...", type=["jpg", "png", "jpeg"])
 
