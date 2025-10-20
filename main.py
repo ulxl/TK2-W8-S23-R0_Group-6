@@ -42,8 +42,8 @@ if uploaded_file is not None:
     top3_prob = prob[top3_idx]
 
     # ---------- TAMPILKAN ----------
-    st.success(f"🔝 Prediksi Utama: **{top_label}** – Keyakinan: **{top_conf*100:.2f}%**")
+    st.success(f"Prediksi Utama: **{top_label}** – Keyakinan: **{top_conf*100:.2f}%**")
     st.write("")  # baris kosong
-    st.write("🎯 Top-3 Prediksi:")
+    st.write("Top-3 Prediksi:")
     for rank, (label, confidence) in enumerate(zip(top3_label, top3_prob), 1):
         st.write(f"{rank}. **{label}** – Keyakinan: **{confidence*100:.2f}%**")
